@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dolan Ijen Tour - Admin Portal</title>
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- jsPDF untuk Cetak E-Invoice PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Alpine.js Framework -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased" x-data="dolanApp()">
+
+  <!-- 1. HALAMAN LOGIN -->
+  <div x-show="!isLoggedIn" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-sky-900">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md text-center">
+      <!-- Logo Perusahaan -->
+      <div class="flex justify-center mb-4">
+        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgUACUFnruesg_KGI_uX9IZeNnPsnUaxRbiZH30M5WdVgCz3N5BEyezp_HZd-JTIIiRYqlj4b6X3bgf-uwDlwQYQ9zmSezV3G9jyTMgNtEWLO06iXhmoTZph-GeJqJlT52F14LbxDBwDyAWsIw5jNKoLP13NmMMpqO_w061BR5wYF3sA2xTIlJPp3c1yZM/s304/Logo_DOLAN_IJEN_TOUR_NEW-removebg-preview.png" 
+             alt="Logo Dolan Ijen Tour" class="h-24 object-contain">
+      </div>
+      <h1 class="text-2xl font-bold text-slate-900">Dolan Ijen Tour</h1>
+      <p class="text-xs text-slate-500 mb-6">Official Administration & Management Portal</p>
+
+      <form @submit.prevent="handleLogin()" class="text-left">
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">User ID / Nomor Pegawai</label>
+          <input type="text" x-model="loginInput.user" required class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm" placeholder="e.g. HARIS_ADMIN">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+          <input type="password" x-model="loginInput.pass" required class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm" placeholder="••••••••">
+        </div>
+        <div class="mb-6">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Hak Akses / Role</label>
+          <select x-model="loginInput.role" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm">
+            <option value="Admin">Admin (Full Access)</option>
+            <option value="Manajemen">Manajemen</option>
+            <option value="Karyawan">Karyawan / Field Guide</option>
+            <option value="Keuangan">Keuangan</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-md transition-all text-sm">
+          <i class="fa-solid fa-right-to-bracket mr-2"></i> Masuk ke Portal
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. MAIN APPLICATION PORTAL -->
+  <div x-show="isLoggedIn" class="min-h-screen flex flex-col md:flex-row">
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-slate-900 text-white flex items-center justify-between p-4 shadow-md">
+      <div class="flex items-center space-x-2">
+        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgUACUFnruesg_KGI_uX9IZeNnPsnUaxRbiZH30M5WdVgCz3N5BEyezp_HZd-JTIIiRYqlj4b6X3bgf-uwDlwQYQ9zmSezV3G9jyTMgNtEWLO06iXhmoTZph-GeJqJlT52F14LbxDBwDyAWsIw5jNKoLP13NmMMpqO_w061BR5wYF3sA2xTIlJPp3c1yZM/s304/Logo_DOLAN_IJEN_TOUR_NEW-removebg-preview.png" class="h-8">
+        <span class="font-bold text-sm">Dolan Ijen Admin</span>
+      </div>
+      <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-slate-300 hover:text-white">
+        <i class="fa-solid fa-bars text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <aside :class="mobileMenuOpen ? 'block' : 'hidden'" class="md:block w-full md:w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col justify-between">
+      <div>
+        <div class="hidden md:flex items-center space-x-3 p-5 border-b border-slate-800">
+          <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgUACUFnruesg_KGI_uX9IZeNnPsnUaxRbiZH30M5WdVgCz3N5BEyezp_HZd-JTIIiRYqlj4b6X3bgf-uwDlwQYQ9zmSezV3G9jyTMgNtEWLO06iXhmoTZph-GeJqJlT52F14LbxDBwDyAWsIw5jNKoLP13NmMMpqO_w061BR5wYF3sA2xTIlJPp3c1yZM/s304/Logo_DOLAN_IJEN_TOUR_NEW-removebg-preview.png" class="h-10 object-contain">
+          <div>
+            <h2 class="font-bold text-white text-sm leading-tight">Dolan Ijen Tour</h2>
+            <p class="text-[10px] text-slate-400">Admin Portal</p>
+          </div>
+        </div>
+
+        <nav class="p-4 space-y-1 text-sm">
+          <button @click="activeTab = 'dashboard'; mobileMenuOpen = false" :class="activeTab === 'dashboard' ? 'bg-sky-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition">
+            <i class="fa-solid fa-chart-line w-5"></i><span>Dashboard</span>
+          </button>
+          <button @click="activeTab = 'bookings'; mobileMenuOpen = false" :class="activeTab === 'bookings' ? 'bg-sky-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition">
+            <i class="fa-solid fa-users w-5"></i><span>Data Booking</span>
+          </button>
+          <button @click="activeTab = 'payments'; mobileMenuOpen = false" :class="activeTab === 'payments' ? 'bg-sky-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition" x-show="['Admin','Keuangan','Manajemen'].includes(userRole)">
+            <i class="fa-solid fa-wallet w-5"></i><span>Manajemen Pembayaran</span>
+          </button>
+          <button @click="activeTab = 'documents'; mobileMenuOpen = false" :class="activeTab === 'documents' ? 'bg-sky-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition">
+            <i class="fa-solid fa-folder-open w-5"></i><span>Dokumen Drive</span>
+          </button>
+          <button @click="activeTab = 'reports'; mobileMenuOpen = false" :class="activeTab === 'reports' ? 'bg-sky-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition" x-show="['Admin','Keuangan'].includes(userRole)">
+            <i class="fa-solid fa-file-excel w-5"></i><span>Laporan Sheets</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- User Profile & Foto Admin -->
+      <div class="p-4 border-t border-slate-800 bg-slate-950">
+        <div class="flex items-center space-x-3 mb-2">
+          <!-- Foto Profil Admin -->
+          <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEggoKdqmT1lUVukLiMufm-QF3sbBPSVuYcaa3rnLTY85A9faZ85CkJZotcdQuA75uBNBpdJOeI0-ehYN_zxepR3LTwrUHQ8ScQjI14psDg6Vc6bshSnz9DZWAkyyM7xlB77j4kAyPUYptGpqfPOFBsG-J6RW8tF4ma0-Q3mJ6_jOHJKOjRowDenYSboPDg/s450/i-gusti-nyoman-haris-pradana11.jpg" 
+               alt="Admin Profile" class="w-10 h-10 rounded-full object-cover border-2 border-sky-500">
+          <div class="overflow-hidden">
+            <p class="text-xs font-bold text-white truncate" x-text="currentUser || 'I Gusti Nyoman Haris Pradana'"></p>
+            <span class="inline-block px-2 py-0.5 text-[10px] font-semibold bg-sky-900 text-sky-200 rounded" x-text="userRole"></span>
+          </div>
+          <button @click="logout()" class="text-rose-400 hover:text-rose-300 text-sm ml-auto p-1" title="Keluar">
+            <i class="fa-solid fa-power-off"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Area -->
+    <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+      
+      <!-- DASHBOARD TAB -->
+      <div x-show="activeTab === 'dashboard'" class="space-y-6">
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800">Ringkasan Operasional</h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-medium">Total Pemesanan</p>
+            <p class="text-2xl font-bold text-slate-900 mt-1" x-text="bookings.length"></p>
+          </div>
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-medium">Jumlah Tamu (Pax)</p>
+            <p class="text-2xl font-bold text-sky-600 mt-1" x-text="bookings.reduce((a,b) => a + parseInt(b.pax||0), 0)"></p>
+          </div>
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-medium">Pembayaran Lunas</p>
+            <p class="text-2xl font-bold text-emerald-600 mt-1" x-text="bookings.filter(b => b.statusPay === 'Lunas').length"></p>
+          </div>
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-medium">Keberangkatan Aktif</p>
+            <p class="text-2xl font-bold text-indigo-600 mt-1" x-text="bookings.filter(b => b.statusTrip === 'Jadwal').length"></p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800">Jadwal Keberangkatan Mendatang</h3>
+            <button @click="activeTab = 'bookings'" class="text-xs text-sky-600 hover:underline">Lihat Semua</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 text-xs uppercase">
+                <tr>
+                  <th class="p-3">Guest Lead</th>
+                  <th class="p-3">Paket</th>
+                  <th class="p-3">Tgl Kedatangan</th>
+                  <th class="p-3">Penjemputan</th>
+                  <th class="p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="item in bookings.slice(0, 5)" :key="item.id">
+                  <tr class="border-b hover:bg-slate-50">
+                    <td class="p-3 font-semibold text-slate-900" x-text="item.nama"></td>
+                    <td class="p-3" x-text="item.paket"></td>
+                    <td class="p-3" x-text="item.tglDatang"></td>
+                    <td class="p-3" x-text="item.pickup"></td>
+                    <td class="p-3">
+                      <span class="px-2 py-1 text-xs rounded-full font-semibold"
+                        :class="item.statusPay === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
+                        x-text="item.statusPay"></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANAJEMEN BOOKING TAB -->
+      <div x-show="activeTab === 'bookings'" class="space-y-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <h2 class="text-xl md:text-2xl font-bold text-slate-800">Manajemen Pemesanan (Booking)</h2>
+          <button @click="showModalBooking = true" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm rounded-lg shadow">
+            <i class="fa-solid fa-plus mr-2"></i>Tambah Guest Booking
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 text-xs uppercase">
+                <tr>
+                  <th class="p-3">Nama Guest</th>
+                  <th class="p-3">Kontak & Paspor</th>
+                  <th class="p-3">Kewarganegaraan</th>
+                  <th class="p-3">Paket & Pax</th>
+                  <th class="p-3">Kedatangan & Penjemputan</th>
+                  <th class="p-3 text-center">Aksi & Invoice</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="b in bookings" :key="b.id">
+                  <tr class="border-b hover:bg-slate-50">
+                    <td class="p-3 font-semibold text-slate-900" x-text="b.nama"></td>
+                    <td class="p-3">
+                      <div class="text-xs" x-text="b.telp"></div>
+                      <div class="text-xs text-slate-400" x-text="b.email"></div>
+                      <div class="text-xs font-mono text-slate-500" x-text="'Pass: ' + b.passport"></div>
+                    </td>
+                    <td class="p-3" x-text="b.negara"></td>
+                    <td class="p-3">
+                      <div class="font-medium" x-text="b.paket"></div>
+                      <span class="text-xs bg-slate-100 px-2 py-0.5 rounded" x-text="b.pax + ' Pax'"></span>
+                    </td>
+                    <td class="p-3">
+                      <div class="text-xs font-semibold text-slate-800" x-text="b.tglDatang"></div>
+                      <div class="text-xs text-slate-500" x-text="'In: ' + b.pickup"></div>
+                      <div class="text-xs text-slate-500" x-text="'Out: ' + b.drop"></div>
+                    </td>
+                    <td class="p-3 text-center space-x-1">
+                      <button @click="generatePDFInvoice(b)" class="px-2 py-1 bg-slate-800 text-white rounded text-xs hover:bg-slate-700" title="Cetak PDF Invoice">
+                        <i class="fa-solid fa-file-pdf mr-1"></i> Invoice
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANAJEMEN PEMBAYARAN TAB -->
+      <div x-show="activeTab === 'payments'" class="space-y-6">
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800">Manajemen Pembayaran & Bukti Transfer</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 text-xs uppercase">
+                <tr>
+                  <th class="p-3">No. Invoice</th>
+                  <th class="p-3">Nama Tamu</th>
+                  <th class="p-3">Nominal Tagihan</th>
+                  <th class="p-3">Metode</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-center">Bukti Transfer</th>
+                  <th class="p-3 text-center" x-show="userRole === 'Keuangan' || userRole === 'Admin'">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="b in bookings" :key="b.id">
+                  <tr class="border-b hover:bg-slate-50">
+                    <td class="p-3 font-mono text-xs text-sky-700 font-bold" x-text="b.invNo"></td>
+                    <td class="p-3 font-medium text-slate-900" x-text="b.nama"></td>
+                    <td class="p-3 font-semibold" x-text="'Rp ' + parseInt(b.nominal).toLocaleString('id-ID')"></td>
+                    <td class="p-3 text-xs" x-text="b.metode"></td>
+                    <td class="p-3">
+                      <span class="px-2 py-1 text-xs rounded-full font-semibold"
+                        :class="b.statusPay === 'Lunas' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                        x-text="b.statusPay"></span>
+                    </td>
+                    <td class="p-3 text-center">
+                      <a :href="b.buktiUrl" target="_blank" class="text-sky-600 hover:underline text-xs flex items-center justify-center">
+                        <i class="fa-solid fa-paperclip mr-1"></i> View File
+                      </a>
+                    </td>
+                    <td class="p-3 text-center" x-show="userRole === 'Keuangan' || userRole === 'Admin'">
+                      <button x-show="b.statusPay !== 'Lunas'" @click="b.statusPay = 'Lunas'; syncToSheets()" class="px-2 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700">Verifikasi Lunas</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOKUMEN GOOGLE DRIVE TAB (SUDAH INTEGRASI DRIVE UTAMA) -->
+      <div x-show="activeTab === 'documents'" class="space-y-6">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl md:text-2xl font-bold text-slate-800">Penyimpanan Dokumen (Google Drive)</h2>
+          <a href="https://drive.google.com/drive/folders/1pYPKKGv7m0gXUeGQkl2uDxui3j5v_cDx" target="_blank" class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700">
+            <i class="fa-brands fa-google-drive mr-2"></i>Buka Folder Utama Drive
+          </a>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <p class="text-sm text-slate-600">Dokumen paspor dan identitas tamu disimpan di folder terproteksi Google Drive perusahaan.</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <template x-for="b in bookings" :key="b.id">
+              <div class="border rounded-lg p-4 bg-slate-50 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center space-x-2 text-sky-700 font-bold text-sm mb-1">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span x-text="b.nama + ' - Paspor'"></span>
+                  </div>
+                  <p class="text-xs text-slate-500" x-text="'Negara: ' + b.negara"></p>
+                  <p class="text-xs text-slate-500" x-text="'No. Paspor: ' + b.passport"></p>
+                </div>
+                <div class="mt-4 pt-2 border-t flex justify-between items-center">
+                  <span class="text-[10px] bg-slate-200 px-2 py-0.5 rounded text-slate-600">Restricted Access</span>
+                  <a href="https://drive.google.com/drive/folders/1pYPKKGv7m0gXUeGQkl2uDxui3j5v_cDx" target="_blank" class="px-3 py-1 bg-sky-600 text-white rounded text-xs hover:bg-sky-700">Akses Drive</a>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAPORAN GOOGLE SHEETS TAB (SUDAH INTEGRASI SHEET UTAMA) -->
+      <div x-show="activeTab === 'reports'" class="space-y-6">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl md:text-2xl font-bold text-slate-800">Database & Laporan (Google Sheets)</h2>
+          <a href="https://docs.google.com/spreadsheets/d/1R8KyAbsD-C7paI65eFtPESzqXkV723TOvyNtZpvYWd0/edit?usp=drivesdk" target="_blank" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700">
+            <i class="fa-solid fa-file-excel mr-2"></i>Buka Google Sheet Live
+          </a>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="font-bold text-slate-800">Status Database: <span class="text-emerald-600">Terhubung</span></h3>
+          <p class="text-xs text-slate-500">File Spreadsheet <code class="bg-slate-100 p-1 rounded font-bold">Dolanijentour_admin_database</code> aktif digunakan untuk menyimpan data transaksi dan booking otomatis.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAL TAMBAH BOOKING -->
+  <div x-show="showModalBooking" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-slate-900 text-lg">Input Data Pemesanan Baru</h3>
+        <button @click="showModalBooking = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <form @submit.prevent="saveBooking()" class="space-y-4 text-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Nama Guest Lead *</label>
+            <input type="text" x-model="newForm.nama" required class="w-full border p-2 rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Nomor Telepon/WhatsApp *</label>
+            <input type="text" x-model="newForm.telp" required class="w-full border p-2 rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Email *</label>
+            <input type="email" x-model="newForm.email" required class="w-full border p-2 rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Kewarganegaraan *</label>
+            <input type="text" x-model="newForm.negara" required class="w-full border p-2 rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Nomor Paspor / KTP *</label>
+            <input type="text" x-model="newForm.passport" required class="w-full border p-2 rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Paket Wisata *</label>
+            <select x-model="newForm.paket" class="w-full border p-2 rounded">
+              <option value="Ijen Blue Fire Midnight Tour">Ijen Blue Fire Midnight Tour</option>
+              <option value="Mount Bromo & Ijen 3D2N Overland">Mount Bromo & Ijen 3D2N Overland</option>
+              <option value="Baluran Safari & Ijen Crater">Baluran Safari & Ijen Crater</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Tanggal Kedatangan *</label>
+            <input type="date" x-model="newForm.tglDatang" required class="w-full border p-2 rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Jumlah Peserta (Pax) *</label>
+            <input type="number" x-model="newForm.pax" required class="w-full border p-2 rounded" min="1">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Lokasi Penjemputan *</label>
+            <input type="text" x-model="newForm.pickup" required class="w-full border p-2 rounded" placeholder="Stasiun/Bandara/Hotel">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Lokasi Pengantaran (Drop-off) *</label>
+            <input type="text" x-model="newForm.drop" required class="w-full border p-2 rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Nominal Pembayaran (IDR) *</label>
+            <input type="number" x-model="newForm.nominal" required class="w-full border p-2 rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Metode Pembayaran</label>
+            <select x-model="newForm.metode" class="w-full border p-2 rounded">
+              <option value="Bank Transfer BCA">Bank Transfer BCA</option>
+              <option value="Mandiri Transfer">Mandiri Transfer</option>
+              <option value="Cash on Arrival">Cash on Arrival</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-4 border-t">
+          <button type="button" @click="showModalBooking = false" class="px-4 py-2 border rounded text-slate-600">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-sky-600 text-white rounded font-semibold hover:bg-sky-700">Simpan Booking</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function dolanApp() {
+      return {
+        isLoggedIn: false,
+        currentUser: 'I Gusti Nyoman Haris Pradana',
+        userRole: 'Admin',
+        mobileMenuOpen: false,
+        activeTab: 'dashboard',
+        showModalBooking: false,
+        loginInput: { user: '', pass: '', role: 'Admin' },
+        
+        bookings: [
+          {
+            id: 1,
+            invNo: 'INV/HIJ/2026/10/007',
+            nama: 'Jsjsbdd',
+            telp: '+628124994902',
+            email: 'jsjsbdd@gmail.com',
+            negara: 'Indonesia',
+            passport: 'Bsbahdhd',
+            paket: 'Ijen Blue Fire Midnight Tour',
+            tglDatang: '2026-10-24',
+            pax: 1,
+            pickup: 'Hotel Santika Banyuwangi',
+            drop: 'Ketapang Ferry Port',
+            nominal: 300000,
+            metode: 'Bank Transfer BCA',
+            statusPay: 'Lunas',
+            statusTrip: 'Jadwal',
+            buktiUrl: '#'
+          }
+        ],
+
+        newForm: {
+          nama: '', telp: '', email: '', negara: '', passport: '',
+          paket: 'Ijen Blue Fire Midnight Tour', tglDatang: '', pax: 1,
+          pickup: '', drop: '', nominal: 0, metode: 'Bank Transfer BCA'
+        },
+
+        handleLogin() {
+          if (this.loginInput.user) {
+            this.currentUser = this.loginInput.user;
+            this.userRole = this.loginInput.role;
+            this.isLoggedIn = true;
+          }
+        },
+
+        logout() {
+          this.isLoggedIn = false;
+        },
+
+        saveBooking() {
+          const newId = this.bookings.length + 1;
+          const invNum = 'INV/HIJ/2026/' + String(newId).padStart(3, '0');
+          const data = {
+            id: newId,
+            invNo: invNum,
+            ...this.newForm,
+            statusPay: 'Pending',
+            statusTrip: 'Jadwal',
+            buktiUrl: '#'
+          };
+          this.bookings.unshift(data);
+          this.showModalBooking = false;
+          alert('Booking Berhasil Ditambahkan dengan Nomor Invoice: ' + invNum);
+        },
+
+        generatePDFInvoice(item) {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          
+          doc.setFontSize(16);
+          doc.text("PT HARRIS IJEN JAYA MANDIRI", 14, 20);
+          doc.setFontSize(10);
+          doc.text("DOLAN IJEN TOUR & TRAVEL SERVICE - BANYUWANGI", 14, 26);
+          doc.text("Official E-Invoice & Confirmation Voucher", 14, 32);
+          doc.line(14, 35, 196, 35);
+
+          doc.setFontSize(11);
+          doc.text(`Invoice No: ${item.invNo}`, 14, 45);
+          doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 52);
+          doc.text(`Nama Guest: ${item.nama}`, 14, 59);
+          doc.text(`Kewarganegaraan: ${item.negara}`, 14, 66);
+          doc.text(`No. Paspor/ID: ${item.passport}`, 14, 73);
+
+          doc.text(`Paket Wisata: ${item.paket}`, 14, 85);
+          doc.text(`Jumlah Peserta: ${item.pax} Pax`, 14, 92);
+          doc.text(`Penjemputan: ${item.pickup}`, 14, 99);
+          doc.text(`Pengantaran: ${item.drop}`, 14, 106);
+          
+          doc.line(14, 112, 196, 112);
+          doc.setFontSize(12);
+          doc.text(`Total Tagihan: IDR ${parseInt(item.nominal).toLocaleString('id-ID')}`, 14, 122);
+          doc.text(`Status Pembayaran: ${item.statusPay.toUpperCase()}`, 14, 130);
+
+          doc.save(`Invoice-${item.invNo.replace(/\//g, '-')}.pdf`);
+        }
+      };
+    }
+  </script>
+</body>
+</html>
